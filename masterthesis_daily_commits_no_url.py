@@ -88,6 +88,7 @@ def fixGithubIoLink(url):
 	return returnURL
 
 def isAfterHackathon(commits, hackathonEndDate):
+
 	latestCommit = commits[0]['commit']['committer']['date'].split("T")[0]
 	latestCommitParts = latestCommit.split("-")
 	latestCommitDate = datetime.date(int(latestCommitParts[0]), int(latestCommitParts[1]), int(latestCommitParts[2]))
@@ -99,6 +100,7 @@ def isAfterHackathon(commits, hackathonEndDate):
 
 
 def commitsPerDays(commitsList, hackathonendDate, devPostId):
+
 	hackathonEndDateParts = hackathonendDate.split("-")
 	hackathonEndDate = datetime.date(int(hackathonEndDateParts[0]), int(hackathonEndDateParts[1]), int(hackathonEndDateParts[2]))
 
@@ -124,10 +126,13 @@ def commitsPerDays(commitsList, hackathonendDate, devPostId):
 			commentIds = ""
 			if hackathonEndDate == parsedCommit[0]:
 
+
+				### GET COMMENTS FOR THIS COMMIT ###
 				r, content = h.request(parsedCommit[4], "GET", headers=headers)
 				data = json.loads(content.decode("utf-8"))
 
 				for commentId in data:
+					print("IN COMMENTS")
 					commentIds += str(commentId['id']) + "#"
 
 				commit_rows.append([str(commit_id), parsedCommit[1], i, parsedCommit[5], parsedCommit[2], parsedCommit[3], commentIds])
@@ -135,9 +140,8 @@ def commitsPerDays(commitsList, hackathonendDate, devPostId):
 
 
 
-
 def pullRequestsPerProject(devpostId, pulls_url):
-	pulls_url = pulls_url.replace("{/number}", "?per_page=100")
+	pulls_url = pulls_url.replace("{/number}", "")
 	r, content = h.request(pulls_url, "GET", headers=headers)
 	data = json.loads(content.decode("utf-8"))
 	pr_id = str(devpostId)
@@ -180,13 +184,11 @@ def projectTechnologiesCovered(participants, devpost_id, technologies):
 ###                 ###
 #######################
 
-with open('projects-incl-hackathon-filtered.csv', encoding="utf8") as csv_file:
+with open('projects-incl-hackathon-filtered-no-url.csv', encoding="utf8") as csv_file:
 	csv_reader = csv.reader(csv_file, delimiter=';')
 	line_count = 0
 	githubProjects = 0
 
-	#for i in range(0, 900):
-	#	next(csv_reader)
 	for row in csv_reader:
 		if line_count > 0:
 			try:
@@ -199,57 +201,50 @@ with open('projects-incl-hackathon-filtered.csv', encoding="utf8") as csv_file:
 				project_participants = str(row[4])
 
 				print("ROW: " + str(line_count))
-				if github_url and ("github.com" in github_url or "github.io" in github_url):
-					githubProjects += 1
-					if "github.io" in github_url and "github.com" not in github_url:
-						github_url = fixGithubIoLink(github_url)
-					(userName, project_name) = projectNameFromGithubURL(github_url)
 
-					github_api_url = toAPIGithubUrl(userName, project_name)
+				userName = project_participants.split("#")[0]
 
-					r, content = h.request(github_api_url, "GET", headers=headers)
-					data = json.loads(content.decode("utf-8"))
+				github_api_url = toAPIGithubUrl(userName, devpost_id)
 
-					####
-					ght_owner_id = data['owner']['id']
-					forked_from = data['fork']
-					proj_id = data['id']
-					contributors_url = data['contributors_url']
-					pr_url = data['pulls_url']
-					###
+				r, content = h.request(github_api_url, "GET", headers=headers)
+				data = json.loads(content.decode("utf-8"))
+				status = str(r['status'])
 
+				####
+				ght_owner_id = data['owner']['id']
+				forked_from = data['fork']
+				proj_id = data['id']
+				contributors_url = data['contributors_url']
+				pr_url = data['pulls_url']
+				###
 
-					### GET ALL COMMITS ###
+				### GET ALL COMMITS ###
 
-					r, content = h.request(github_api_url + "/commits?per_page=100", "GET", headers=headers)
-					data = json.loads(content.decode("utf-8"))
+				r, content = h.request(github_api_url + "/commits?per_page=100", "GET", headers=headers)
+				status = str(r['status'])
+				data = json.loads(content.decode("utf-8"))
 
-					commitsList = []
-					commitsList += data
+				commitsList = []
+				commitsList += data
 
-					if 'link' in r:
-						while 'next' in r['link']:
-							r, content = h.request(str(r['link'].split(">")[0].replace("<", "")), "GET",
-												   headers=headers)
-							data = json.loads(content.decode("utf-8"))
-							commitsList += data
+				if 'link' in r:
+					while 'next' in r['link']:
+						r, content = h.request(str(r['link'].split(">")[0].replace("<", "")), "GET",
+											   headers=headers)
+						data = json.loads(content.decode("utf-8"))
+						commitsList += data
+				#######################
 
-					#######################
+				if (isAfterHackathon(commitsList, hackathon_end_date)):
+					commitsPerDays(commitsList, hackathon_end_date, devpost_id)
+					pullRequestsPerProject(devpost_id, pr_url)
+					projectTechnologiesCovered(project_participants, devpost_id, project_technologies)
+					project_csv_rows.append(row + [userName, proj_id, forked_from, "1"])
 
-					if (isAfterHackathon(commitsList, hackathon_end_date)):
-						commitsPerDays(commitsList, hackathon_end_date, devpost_id)
-						pullRequestsPerProject(devpost_id, pr_url)
-						projectTechnologiesCovered(project_participants, devpost_id, project_technologies)
-						project_csv_rows.append(row + [userName, proj_id, forked_from, "1"])
-
-						WORK_AFTER_HACKATHON_GITHUB += 1
-					else:
-						NO_WORK_AFTER_HACKATHON_GITHUB += 1
-						project_csv_rows.append(row + [None, None, None, "0"])
-
+					WORK_AFTER_HACKATHON_GITHUB += 1
 				else:
-					EXCEPTIONS += 1
-					project_csv_rows.append(row + [None, None, None, "0"])
+					NO_WORK_AFTER_HACKATHON_GITHUB += 1
+
 
 
 			except Exception as e:
@@ -258,16 +253,15 @@ with open('projects-incl-hackathon-filtered.csv', encoding="utf8") as csv_file:
 				print(row)
 				failed_rows.append(row)
 				EXCEPTIONS += 1
-		try:
-			r, content = h.request("https://api.github.com/rate_limit", "GET", headers=headers)
-			data = json.loads(content.decode("utf-8"))
-			limit = data['rate']['remaining']
 
-			if limit < 300:
-				time.sleep(4000)
-		except Exception as e:
-			print(e)
-		#if line_count == 300:
+		r, content = h.request("https://api.github.com/rate_limit", "GET", headers=headers)
+		data = json.loads(content.decode("utf-8"))
+		limit = data['rate']['remaining']
+
+		if limit < 300:
+			time.sleep(3900)
+
+		#if line_count == 5:
 		#	break
 
 		line_count += 1
@@ -278,23 +272,23 @@ with open('projects-incl-hackathon-filtered.csv', encoding="utf8") as csv_file:
 						'participant-ids', 'number-of-participants', 'likes', 'comments',
 						'hackathon-id', 'hackathon-prize-money', 'hackathon-number-of-prizes',
 						'hackathon-end-date', 'hackathon-is-colocated', 'location', 'github-url', 'winner',
-						'github_owner_name', 'github_project_id', 'github_forked_from', 'work_after']
+						'ght/github_owner_name', 'ght/github_project_id', 'ght/github_forked_from', 'work_after']
 
 
 	projects = pd.DataFrame(project_csv_rows, columns=project_csv_cols)
-	projects.to_csv('githubProjects.csv', index=False, sep=';')
+	projects.to_csv('githubProjects_no-url.csv', index=False, sep=';')
 
 	commitsDataFrame = pd.DataFrame(commit_rows, columns=commits_cols)
-	commitsDataFrame.to_csv('githubCommits.csv', index=False, sep=';')
+	commitsDataFrame.to_csv('githubCommits_no-url.csv', index=False, sep=';')
 
 	prDataFrame = pd.DataFrame(pr_rows, columns=pr_cols)
-	prDataFrame.to_csv('githubPullRequests.csv', index=False, sep=';')
+	prDataFrame.to_csv('githubPullRequests_no-url.csv', index=False, sep=';')
 
 	particpantsDf = pd.DataFrame(participant_rows, columns=participant_cols)
-	particpantsDf.to_csv('githubWorkload.csv', index=False, sep=';')
+	particpantsDf.to_csv('githubWorkload_no-url.csv', index=False, sep=';')
 
 	failedRows = pd.DataFrame(failed_rows, columns=failed_row_cols)
-	failedRows.to_csv('githubFailedrows.csv', index=False, sep=';')
+	failedRows.to_csv('githubFailedrows_no-url.csv', index=False, sep=';')
 
 	print("WORK AFTER HACKATHONS FROM GITHUB: " + str(WORK_AFTER_HACKATHON_GITHUB))
 	print("NO WORK AFTER HACKATHOS FROM GITHUB: " + str(NO_WORK_AFTER_HACKATHON_GITHUB))
