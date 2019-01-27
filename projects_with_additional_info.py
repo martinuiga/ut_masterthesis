@@ -184,8 +184,6 @@ with open('githubProjects.csv', encoding="utf8") as csv_file:
 
 					# Skills diversity
 					skillPercentage = roundup(skillDiversity(participants, technologies), 1)
-					print(skillPercentage)
-					print(roundup(skillPercentage, 1))
 
 					# Commits / 270 days -> commits frequency
 					commits_slash_all_days = commits_amount / 270
@@ -194,7 +192,6 @@ with open('githubProjects.csv', encoding="utf8") as csv_file:
 					# Project dormancy
 					#commits_frequency_dormant = isProjectDormantMonthly(commits_rows, hackathon_end_date)
 					commits_frequency_dormant = isProjectDormantInAverage(commits_rows, hackathon_end_date)
-
 
 
 					row = row + [str(skillPercentage) , str(commits_amount), str(days_after_hackathon), len(committers), commits_slash_days, str(len(commit_dates_unique)),str(commits_frequency_dormant), str(commits_slash_all_days)]
