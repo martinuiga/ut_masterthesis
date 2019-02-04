@@ -1,12 +1,10 @@
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import csv
 import datetime
 import math
 from itertools import combinations
 
-commits_dataframe = pd.read_csv("githubCommits.csv", sep=";")
+commits_dataframe = pd.read_csv("githubCommitsTogether.csv", sep=";")
 participants_dataframe = pd.read_csv("participants.csv", sep=";")
 
 participant_headers = []
@@ -39,7 +37,7 @@ def roundup(a, digits=0):
 
 participant_project_count = {}
 
-with open('githubProjects_with_extra_info.csv', encoding="utf8") as csv_file:
+with open('githubProjectsTogether.csv', encoding="utf8") as csv_file:
 	csv_reader = csv.reader(csv_file, delimiter=';')
 	line_count = 0
 
@@ -94,13 +92,9 @@ participants_with_more_than_two_projects_combinations = (list(combinations(parti
 #############################
 
 
-#print(participants_with_more_than_two_projects)
-#print(participants_with_more_than_two_projects_combinations)
-
-
 participant_worked_together_count = {}
 
-with open('githubProjects_with_extra_info.csv', encoding="utf8") as csv_file:
+with open('githubProjectsTogether.csv', encoding="utf8") as csv_file:
 	csv_reader = csv.reader(csv_file, delimiter=';')
 	line_count = 0
 
@@ -144,79 +138,6 @@ for (key, value) in participant_worked_together_count.items():
 		filtered_participant_worked_together_count[key] = value
 
 print(filtered_participant_worked_together_count)
-
-
-with open('participants.csv', encoding="utf8") as csv_file:
-	csv_reader = csv.reader(csv_file, delimiter=';')
-	line_count = 0
-
-	for row in csv_reader:
-		if line_count > 0:
-			participant_id = str(row[0])
-			try:
-				projects_participated_in = 0
-				if participant_project_count.keys().__contains__(participant_id):
-					projects_participated_in = participant_project_count[participant_id]
-
-				participant_rows.append(row + [projects_participated_in])
-			except Exception as e:
-				print("error")
-				print(e)
-				print(row)
-
-		else:
-			participant_headers = row + ["projects_participated_in"]
-		#if (line_count == 10):
-		#	break
-		line_count += 1
-
-	projectsFile = pd.DataFrame(participant_rows, columns=participant_headers)
-	projectsFile.to_csv('participants_with_extra_info.csv', index=False, sep=';')
-
-
-
-
-
-with open('githubProjects_with_extra_info.csv', encoding="utf8") as csv_file:
-	csv_reader = csv.reader(csv_file, delimiter=';')
-	line_count = 0
-	project_rows = []
-	project_headers = []
-
-	for row in csv_reader:
-		if line_count > 0:
-			participants = str(row[4])
-			try:
-				participants = participants.split("#")
-
-				participant_combinations = (list(combinations(participants, 2)))
-
-				worked_together_before = 0
-
-				for (p1, p2) in participant_combinations:
-					oneWay = p1 + "#" + p2
-					secondWay = p2 + "#" + p1
-
-					if (filtered_participant_worked_together_count.keys().__contains__(oneWay)) \
-						or (filtered_participant_worked_together_count.keys().__contains__(secondWay)):
-						worked_together_before = 1
-
-				project_rows.append(row + [str(worked_together_before)])
-
-
-			except Exception as e:
-				print("error")
-				print(e)
-				print(row)
-
-		else:
-			project_headers = row + ["worked_together_before"]
-		#if (line_count == 3000):
-		#	break
-		line_count += 1
-
-	projectsFile = pd.DataFrame(project_rows, columns=project_headers)
-	projectsFile.to_csv('githubProjects_with_extra_info_part.csv', index=False, sep=';')
 
 
 

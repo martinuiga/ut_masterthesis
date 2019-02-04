@@ -14,18 +14,21 @@ sns.set(style="white")
 sns.set(style="whitegrid", color_codes=True)
 
 
-data = pd.read_csv('githubProjects_with_extra_info.csv', header=0, sep=";")
+data = pd.read_csv('githubProjects_with_extra_info_part.csv', header=0, sep=";")
 
 data = data.drop(columns=['id', 'timestamp', 'technologies', 'participant-ids',
 		   'hackathon-id', 'hackathon-prize-money', 'hackathon-end-date',
 		   'location', 'github-url', 'github_owner_name', 'github_project_id', 'github_forked_from', 'commits_amount_dormant'])
 
 
-#onlyWorkAfter = data.loc[data['work_after'] == 1]
 onlyWorkAfter = data.drop(columns=['work_after', 'commits_slash_all_days', 'commits', 'days_which_has_commits',
 								   'commits_slash_last_active_day', 'days_after_hackathon_for_last_commit'])
-#onlyWorkAfter = onlyWorkAfter.round({'commits_slash_days': 1, 'skillsCovered': 1})
 
+
+## TURN AROUND DORMANCY VALUE
+onlyWorkAfter.commits_frequency_dormant[onlyWorkAfter.commits_frequency_dormant == 1] = 2
+onlyWorkAfter.commits_frequency_dormant[onlyWorkAfter.commits_frequency_dormant == 0] = 1
+onlyWorkAfter.commits_frequency_dormant[onlyWorkAfter.commits_frequency_dormant == 2] = 0
 
 print(list(onlyWorkAfter.columns))
 print(onlyWorkAfter['commits_frequency_dormant'].value_counts())
@@ -33,8 +36,8 @@ print(onlyWorkAfter['commits_frequency_dormant'].value_counts())
 
 ##### WORK AFTER DATA #####
 
-count_no_sub = len(onlyWorkAfter[onlyWorkAfter['commits_frequency_dormant']==1])
-count_sub = len(onlyWorkAfter[onlyWorkAfter['commits_frequency_dormant']==0])
+count_no_sub = len(onlyWorkAfter[onlyWorkAfter['commits_frequency_dormant']==0])
+count_sub = len(onlyWorkAfter[onlyWorkAfter['commits_frequency_dormant']==1])
 pct_of_no_sub = count_no_sub/(count_no_sub+count_sub)
 print("percentage of no work is", pct_of_no_sub*100)
 pct_of_sub = count_sub/(count_no_sub+count_sub)
@@ -48,18 +51,6 @@ table.div(table.sum(1).astype(float), axis=0).plot(kind='bar', stacked=True)
 plt.title('Winner proportion between non- and dormant projects')
 plt.xlabel('Winner')
 plt.ylabel('Proportion')
-plt.savefig('mariral_vs_pur_stack')
-
-
-#### CONTRIBUTORS AMOUNT IS GOOD
-
-table=pd.crosstab(onlyWorkAfter.contributors_amount,onlyWorkAfter.commits_frequency_dormant)
-table.div(table.sum(1).astype(float), axis=0).plot(kind='bar', stacked=True)
-plt.title('Stacked Bar Chart of contributors amount vs commits_frequency_dormant')
-plt.xlabel('Contributors amount')
-plt.ylabel('Proportion')
-plt.savefig('mariral_vs_pur_stack')
-
 
 
 
@@ -70,7 +61,6 @@ plt.title('Stacked Bar Chart of Number of prizes vs commits_frequency_dormant')
 
 plt.xlabel('Number of prizes')
 plt.ylabel('Proportion')
-plt.savefig('mariral_vs_pur_stack')
 
 
 ## HACKATHON SKILL COVERAGE
@@ -80,8 +70,6 @@ table.div(table.sum(1).astype(float), axis=0).plot(kind='bar', stacked=True)
 plt.title('Stacked Bar Chart of skills covered vs commits_frequency_dormant')
 plt.xlabel('Skills covered %')
 plt.ylabel('Proportion of Customers')
-plt.savefig('mariral_vs_pur_stack')
-
 
 
 
@@ -104,8 +92,8 @@ os_data_y= pd.DataFrame(data=os_data_y,columns=['commits_frequency_dormant'])
 print("length of oversampled data is ",len(os_data_X))
 print("Number of no subscription in oversampled data",len(os_data_y[os_data_y['commits_frequency_dormant']==0]))
 print("Number of subscription",len(os_data_y[os_data_y['commits_frequency_dormant']==1]))
-print("Proportion of work after hackathon in oversampled data is ",len(os_data_y[os_data_y['commits_frequency_dormant']==0])/len(os_data_X))
-print("Proportion of no work after hackathon in oversampled data is ",len(os_data_y[os_data_y['commits_frequency_dormant']==1])/len(os_data_X))
+print("Proportion of work after hackathon in oversampled data is ",len(os_data_y[os_data_y['commits_frequency_dormant']==1])/len(os_data_X))
+print("Proportion of no work after hackathon in oversampled data is ",len(os_data_y[os_data_y['commits_frequency_dormant']==0])/len(os_data_X))
 
 
 data_final_vars = onlyWorkAfter.columns.values.tolist()
@@ -124,9 +112,8 @@ print(rfe.ranking_)
 
 
 
-cols = ['number-of-technologies', 'number-of-participants', 'likes', 'comments',
-		'hackathon-number-of-prizes', 'hackathon-is-colocated', 'winner',
-		'skillsCovered', 'contributors_amount']
+cols = ['winner', 'number-of-technologies', 'number-of-participants', 'likes', 'comments',
+		'hackathon-number-of-prizes', 'hackathon-is-colocated', 'skillsCovered', 'worked_together_before']
 
 
 
@@ -144,7 +131,7 @@ print(result.summary2())
 
 
 # CHOOSING THE REMAINING COLS
-cols = ['skillsCovered', 'number-of-participants']
+cols = ['worked_together_before', 'skillsCovered']
 
 from sklearn.linear_model import LogisticRegression
 
