@@ -14,11 +14,11 @@ sns.set(style="white")
 sns.set(style="whitegrid", color_codes=True)
 
 
-data = pd.read_csv('githubProjects_with_extra_info_part.csv', header=0, sep=";")
+data = pd.read_csv('githubProjects_with_extra_info.csv', header=0, sep=";")
 
 data = data.drop(columns=['id', 'timestamp', 'technologies', 'participant-ids',
 		   'hackathon-id', 'hackathon-prize-money', 'hackathon-end-date',
-		   'location', 'github-url', 'github_owner_name', 'github_project_id', 'github_forked_from', 'commits_amount_dormant'])
+		   'location', 'github-url', 'github_owner_name', 'github_project_id', 'github_forked_from'])
 
 
 onlyWorkAfter = data.drop(columns=['work_after', 'commits_slash_all_days', 'commits', 'days_which_has_commits',
