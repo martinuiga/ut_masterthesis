@@ -18,7 +18,7 @@ plt.ylim(1, 30)
 plt.ylabel("Contributors amount")
 plt.xlabel("Commits amount")
 plt.title("Y axis: Commiters amount, X axis: Commits amount")
-plt.show()
+#plt.show()
 
 
 
@@ -30,7 +30,7 @@ plt.ylim(1, 100)
 plt.ylabel("Contributors amount")
 plt.xlabel("Commits amount")
 plt.title("Y axis: Commiters amount, X axis: Commits amount")
-plt.show()
+#plt.show()
 
 
 
@@ -58,4 +58,16 @@ plt.text(median + median/10,
 plt.ylabel("Commits amount (in 270 days)")
 plt.xlabel("Days active")
 plt.title("Y axis: commits amount, X axis: days active")
+#plt.show()
+
+
+
+
+participants = pd.read_csv("participants.csv", sep=";")
+
+pd.crosstab(participants["number-of-hackathons"], participants.likes).plot(kind='bar')
+plt.title('Purchase Frequency for Job Title')
+plt.xlabel('Job')
+plt.ylabel('Frequency of Purchase')
+plt.savefig('purchase_fre_job')
 plt.show()

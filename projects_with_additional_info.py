@@ -100,9 +100,9 @@ def isProjectDormantInAverage(commits_rows):
 	average = len(commits_rows) / 6
 
 	if average >= 1.0:
-		return 0
-	else:
 		return 1
+	else:
+		return 0
 
 
 def calculateWinnerWeight(hackathons):
@@ -295,8 +295,11 @@ def teamFamiliarity(participants, hackathon_end_date):
 				familiarity[participantString] += 1
 
 
-	participantWeight = 1 / len(participants_separated)
-	amountOfParticipants = len(participants_separated)
+	#participantWeight = 1 / len(participants_separated)
+	#amountOfParticipants = len(participants_separated)
+	participantWeight = 1 / len(participant_combinations)
+	amountOfParticipants = len(participant_combinations)
+
 
 	teamFamiliarityCalculation = 0
 
@@ -337,6 +340,11 @@ with open('githubProjectsTogetherCleaned.csv', encoding="utf8") as csv_file:
 			winner = str(row[15])
 			devpost_id = str(row[0])
 			hackathon_end_date = str(row[11]).strip()
+			numberOfParticipants = str(row[5])
+			likes = str(row[6])
+			comments = str(row[7])
+			hackathon_is_located = str(row[12])
+
 
 			print("ROW NR: " + str(line_count) + " " + devpost_id)
 			if work_after == "1":
@@ -355,6 +363,15 @@ with open('githubProjectsTogetherCleaned.csv', encoding="utf8") as csv_file:
 
 					# Unique commiters
 					committers = unique(list(set(committers)))
+
+					# Contributors amount
+					contributors = len(committers)
+
+					# Outside help
+					outsideHelp = 0
+
+					if contributors > int(numberOfParticipants):
+						outsideHelp = 1
 
 					# Commits amount
 					commits_amount = len(commits_rows)
@@ -390,6 +407,11 @@ with open('githubProjectsTogetherCleaned.csv', encoding="utf8") as csv_file:
 						winner_weight = 0
 
 
+					# Convert hackathon location to numeric
+					hackathonLoc = 0
+					if hackathon_is_located == "True":
+						hackathonLoc = 1
+
 					# Number of teams in the hackathon
 					numberOfProjectsInHackathon = len(hackathons)
 
@@ -402,9 +424,9 @@ with open('githubProjectsTogetherCleaned.csv', encoding="utf8") as csv_file:
 
 					row = row + [str(skillPercentage), str(teamSkillPercentage),
 								 str(numberOfProjectsInHackathon), str(hackathonSizeCategory), str(commits_amount),
-								 str(days_after_hackathon),len(committers), commits_slash_days,
+								 str(days_after_hackathon), str(contributors), str(outsideHelp), commits_slash_days,
 								 str(len(commit_dates_unique)), str(commits_frequency_dormant),
-								 str(commits_slash_all_days), str(worked_together_weight), str(winner_weight)]
+								 str(commits_slash_all_days), str(worked_together_weight), str(winner_weight), str(hackathonLoc)]
 
 					projects.append(row)
 				except Exception as e:
@@ -431,22 +453,27 @@ with open('githubProjectsTogetherCleaned.csv', encoding="utf8") as csv_file:
 				# Number of teams in the hackathon
 				numberOfProjectsInHackathon = len(hackathons)
 
+				# Convert hackathon location to numeric
+				hackathonLoc = 0
+				if hackathon_is_located == "True":
+					hackathonLoc = 1
+
 				# Hackathon size category
 				hackathonSizeCategory = getHackathonSizeCategory(numberOfProjectsInHackathon)
 
 				# Project's team working together weight
 				worked_together_weight = roundup(teamFamiliarity(participants, hackathon_end_date), 1)
 
-				########################################
 
 				projects.append(row + [str(skillPercentage), str(teamSkillPercentage), str(numberOfProjectsInHackathon), str(hackathonSizeCategory),
-									   "0", "0", "0", "0", "0", "1", "0", str(worked_together_weight), str(winner_weight)])
+									   "0", "0", "0", "0", "0", "0", "0", "0", str(worked_together_weight), str(winner_weight), str(hackathonLoc)])
 
 
 		else:
 			project_rows = row + ["skillsCovered", "teamSkillsDiversity", "projectsInHackathon", "hackathonSizeCategory", "commits",
-								  "days_after_hackathon_for_last_commit", "contributors_amount", "commits_slash_last_active_day",
-								  "days_which_has_commits", "commits_frequency_dormant", "commits_slash_all_days", "worked_together_weight", "winner_weight"]
+								  "days_after_hackathon_for_last_commit", "contributors_amount", "outside_help", "commits_slash_last_active_day",
+								  "days_which_has_commits", "commits_frequency_dormant",
+								  "commits_slash_all_days", "worked_together_weight", "winner_weight", "hackathon_location"]
 
 		#if (line_count == 100):
 		#	break
